@@ -1,9 +1,7 @@
-name: Compilar el mod
-
+name: build
 on:
   push:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,13 +10,19 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
-      - name: Compilar
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.10.2
+      - name: Buscar la carpeta del proyecto
         run: |
-          chmod +x gradlew
-          ./gradlew build --no-daemon
-      - name: Subir el .jar
+          F=$(find . -name build.gradle -not -path './.git/*' | head -1)
+          echo "Encontrado: $F"
+          echo "DIR=$(dirname "$F")" >> "$GITHUB_ENV"
+      - name: Compilar
+        run: cd "$DIR" && gradle build --no-daemon
+      - name: Subir el jar
         uses: actions/upload-artifact@v4
         with:
-          name: AllNaturalDisasters-jar
-          path: build/libs/*.jar
+          name: jar
+          path: ${{ env.DIR }}/build/libs/*.jar
